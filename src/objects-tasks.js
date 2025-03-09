@@ -356,34 +356,144 @@ function group(array, keySelector, valueSelector) {
  *
  *  For more examples see unit tests.
  */
+class BaseSelector {
+  constructor(
+    selector = '',
+    hasElement = false,
+    hasId = false,
+    hasPseudoElement = false,
+    order = 0
+  ) {
+    this.selector = selector;
+    this.hasElement = hasElement;
+    this.hasId = hasId;
+    this.hasPseudoElement = hasPseudoElement;
+    this.order = order;
+  }
 
+  checkOrder(newOrder) {
+    if (newOrder < this.order) {
+      throw new Error(
+        'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+      );
+    }
+  }
+
+  element(value) {
+    if (this.hasElement) {
+      throw new Error(
+        'Element, id and pseudo-element should not occur more then one time inside the selector'
+      );
+    }
+    this.checkOrder(1);
+    return new BaseSelector(
+      this.selector + value,
+      true,
+      this.hasId,
+      this.hasPseudoElement,
+      1
+    );
+  }
+
+  id(value) {
+    if (this.hasId) {
+      throw new Error(
+        'Element, id and pseudo-element should not occur more then one time inside the selector'
+      );
+    }
+    this.checkOrder(2);
+    return new BaseSelector(
+      `${this.selector}#${value}`,
+      this.hasElement,
+      true,
+      this.hasPseudoElement,
+      2
+    );
+  }
+
+  class(value) {
+    this.checkOrder(3);
+    return new BaseSelector(
+      `${this.selector}.${value}`,
+      this.hasElement,
+      this.hasId,
+      this.hasPseudoElement,
+      3
+    );
+  }
+
+  attr(value) {
+    this.checkOrder(4);
+    return new BaseSelector(
+      `${this.selector}[${value}]`,
+      this.hasElement,
+      this.hasId,
+      this.hasPseudoElement,
+      4
+    );
+  }
+
+  pseudoClass(value) {
+    this.checkOrder(5);
+    return new BaseSelector(
+      `${this.selector}:${value}`,
+      this.hasElement,
+      this.hasId,
+      this.hasPseudoElement,
+      5
+    );
+  }
+
+  pseudoElement(value) {
+    if (this.hasPseudoElement) {
+      throw new Error(
+        'Element, id and pseudo-element should not occur more then one time inside the selector'
+      );
+    }
+    this.checkOrder(6);
+    return new BaseSelector(
+      `${this.selector}::${value}`,
+      this.hasElement,
+      this.hasId,
+      true,
+      6
+    );
+  }
+
+  stringify() {
+    return this.selector;
+  }
+}
 const cssSelectorBuilder = {
-  element(/* value */) {
-    throw new Error('Not implemented');
+  element(value) {
+    return new BaseSelector().element(value);
   },
 
-  id(/* value */) {
-    throw new Error('Not implemented');
+  id(value) {
+    return new BaseSelector().id(value);
   },
 
-  class(/* value */) {
-    throw new Error('Not implemented');
+  class(value) {
+    return new BaseSelector().class(value);
   },
 
-  attr(/* value */) {
-    throw new Error('Not implemented');
+  attr(value) {
+    return new BaseSelector().attr(value);
   },
 
-  pseudoClass(/* value */) {
-    throw new Error('Not implemented');
+  pseudoClass(value) {
+    return new BaseSelector().pseudoClass(value);
   },
 
-  pseudoElement(/* value */) {
-    throw new Error('Not implemented');
+  pseudoElement(value) {
+    return new BaseSelector().pseudoElement(value);
   },
 
-  combine(/* selector1, combinator, selector2 */) {
-    throw new Error('Not implemented');
+  combine(selector1, combinator, selector2) {
+    const combined = `${selector1.stringify()} ${combinator} ${selector2.stringify()}`;
+    const result = new BaseSelector();
+    result.selector = combined;
+    return result;
   },
 };
 
